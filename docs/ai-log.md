@@ -1,0 +1,13 @@
+## Build 1
+
+### Prompt 1: Build 1 prompt (docs/build-1.md)
+
+- **What I asked:** Implement the event-ticketing domain, including ID and booking-reference generation, ticket inventory, booking and cancellation, booking lookup, a FIFO waitlist, a demo script, and a lookup benchmark.
+- **What came back:** Domain modules for errors, IDs, inventory, and the waitlist queue, plus scripts to demonstrate the booking workflow and compare `Map.get()` with `Array.find()`.
+- **What was wrong (or "nothing"):** The error module was initially saved as `error.js` instead of `errors.js`, causing an `ERR_MODULE_NOT_FOUND` error. I renamed it to match the import path and reran the demo successfully. Automated tests still needed to be run.
+
+### Prompt 2: Automated tests for Build 1
+
+- **What I asked:** Create automated tests for ticket inventory, booking, cancellation, booking lookup, validation, and the FIFO waitlist.
+- **What came back:** A test file using Node.js's built-in test runner with nine tests covering the main booking and queue behaviours.
+- **What was wrong (or "nothing"):** The test file was initially missing, and the first test command ran zero tests. After creating the test file and correcting its import paths, all nine tests passed.
