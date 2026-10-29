@@ -118,3 +118,34 @@ test("filtering does not change the original list", () => {
     originalIds
   );
 });
+
+
+test("sorting breaks ties by title and then by event ID", () => {
+  const tiedEvents = [
+    {
+      id: "3",
+      title: "Jazz Night",
+      date: "2026-12-05T17:00:00",
+      tiers: [{ priceCents: 5000, capacity: 100, sold: 20 }],
+    },
+    {
+      id: "2",
+      title: "Comedy Night",
+      date: "2026-12-05T17:00:00",
+      tiers: [{ priceCents: 5000, capacity: 100, sold: 20 }],
+    },
+    {
+      id: "1",
+      title: "Comedy Night",
+      date: "2026-12-05T17:00:00",
+      tiers: [{ priceCents: 5000, capacity: 100, sold: 20 }],
+    },
+  ];
+
+  const result = sortEvents(tiedEvents, "date");
+
+  assert.deepEqual(
+    result.map((event) => event.id),
+    ["1", "2", "3"]
+  );
+});

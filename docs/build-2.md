@@ -44,15 +44,25 @@ As an organizer, I want to add ticket tiers with a price and capacity so that I 
 2. A non-whole-number price or capacity below 1 produces a `VALIDATION` error.
 3. Adding a tier to a nonexistent event produces a `NOT_FOUND` error.
 
-### S04: Publish and Unpublish an Event
+### S04: As an organizer, I want to publish and unpublish an event, so that I control when it goes public
 
-As an organizer, I want to publish and unpublish an event so that I control when it goes public.
+**Proposed acceptance criteria**
 
-**Acceptance criteria from the Build 2 class activity**
+1. **Publishing an event with ticket tiers**
+   - Given a draft event with at least one ticket tier,
+   - When the organizer publishes the event,
+   - Then the event status changes to `published` and the event appears in the public event list.
 
-1. [Insert the first criterion agreed upon in class.]
-2. [Insert the second criterion agreed upon in class.]
-3. [Insert the third criterion agreed upon in class.]
+2. **Preventing publication without ticket tiers**
+   - Given a draft event with no ticket tiers,
+   - When the organizer tries to publish it,
+   - Then the request is rejected with `INVALID_STATE` and the event remains a draft.
+
+3. **Unpublishing an event**
+   - Given a published event,
+   - When the organizer unpublishes it,
+   - Then the event status changes to `draft` and it no longer appears in the public event list.
+
 
 ### S05: Search, Filter and Sort Events
 
@@ -144,3 +154,23 @@ Add an `npm test` script to `package.json`.
 ## AI Log
 
 Record mistakes made by AI assistance, how they were identified, and how they were corrected in `docs/ai-log.md`.
+
+
+### S04: As an organizer, I want to publish and unpublish an event, so that I control when it goes public
+
+**Proposed acceptance criteria**
+
+1. **Publishing an event with ticket tiers**
+   - Given a draft event with at least one ticket tier,
+   - When the organizer publishes the event,
+   - Then the event status changes to `published` and the event appears in the public event list.
+
+2. **Preventing publication without ticket tiers**
+   - Given a draft event with no ticket tiers,
+   - When the organizer tries to publish it,
+   - Then the request is rejected with `INVALID_STATE` and the event remains a draft.
+
+3. **Unpublishing an event**
+   - Given a published event,
+   - When the organizer unpublishes it,
+   - Then the event status changes to `draft` and it no longer appears in the public event list.

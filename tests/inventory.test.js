@@ -358,3 +358,145 @@ test("rejects booking tickets for an unpublished event", () => {
     }
   );
 });
+
+test("Build 2 creates a valid event as a draft", () => {
+  const store = createStore();
+
+  const event = createEvent(store, {
+    title: "Jazz Night",
+    city: "Lagos",
+    venue: "City Hall",
+    date: "2026-12-05",
+  });
+
+  assert.ok(event.id);
+  assert.equal(event.title, "Jazz Night");
+  assert.equal(event.city, "Lagos");
+  assert.equal(event.venue, "City Hall");
+  assert.equal(event.date, "2026-12-05");
+  assert.equal(event.status, "draft");
+  assert.equal(store.events.size, 1);
+
+  assert.deepEqual(listEventSummaries(store), []);
+});
+
+test("addTier rejects an unknown event with NOT_FOUND", () => {
+  const store = createStore();
+
+  assert.throws(
+    () =>
+      addTier(store, "missing-event-id", {
+        name: "General",
+        priceCents: 500000,
+        capacity: 100,
+      }),
+    { code: "NOT_FOUND" }
+  );
+
+  assert.equal(store.events.size, 0);
+});
+test("S03 adds a ticket tier with the correct initial inventory", () => {
+  const store = createStore();
+  const event = createEvent(store, {
+    title: "Jazz Night",
+    city: "Lagos",
+    venue: "City Hall",
+    date: "2026-12-05",
+  });
+
+  const tier = addTier(store, event.id, {
+    name: "General",
+    priceCents: 500000,
+    capacity: 100,
+  });
+
+  assert.equal(tier.name, "General");
+  assert.equal(tier.priceCents, 500000);
+  assert.equal(tier.capacity, 100);
+  assert.equal(tier.sold, 0);
+  assert.equal(tier.capacity - tier.sold, 100);
+});
+
+test("S03 rejects invalid ticket prices and capacities", () => {
+  const store = createStore();
+  const event = createEvent(store, {
+    title: "Jazz Night",
+    city: "Lagos",
+    venue: "City Hall",
+    date: "2026-12-05",
+  });
+
+  assert.throws(
+    () =>
+      addTier(store, event.id, {
+        name: "Fractional Price",
+        priceCents: 500000.5,
+        capacity: 100,
+      }),
+    { code: "VALIDATION" }
+  );
+
+  assert.throws(
+    () =>
+      addTier(store, event.id, {
+        name: "Invalid Capacity",
+        priceCents: 500000,
+        capacity: 0,
+      }),
+    { code: "VALIDATION" }
+  );
+
+  assert.equal(event.tiers.size, 0);
+});
+
+
+test("S04 publishes an event with a ticket tier and makes it public", () => {
+  const store = createStore();
+  const event = createEvent(store, { name: "Jazz Night" });
+
+  addTier(store, event.id, {
+    name: "General",
+    priceCents: 500000,
+    capacity: 100,
+  });
+
+  publishEvent(store, event.id);
+
+  assert.equal(event.status, "published");
+  assert.equal(listEventSummaries(store).length, 1);
+});
+
+
+test("S04 rejects publishing an event without ticket tiers", () => {
+  const store = createStore();
+  const event = createEvent(store, { name: "Jazz Night" });
+
+  assert.throws(
+    () => publishEvent(store, event.id),
+    { code: "INVALID_STATE" }
+  );
+
+  assert.equal(event.status, "draft");
+  assert.deepEqual(listEventSummaries(store), []);
+});
+
+
+test("S06 rejects booking tickets for a draft event", () => {
+  const { store, event, tier } = setup();
+
+  assert.equal(event.status, "draft");
+
+  assert.throws(
+    () =>
+      bookTickets(store, {
+        eventId: event.id,
+        tierId: tier.id,
+        customerName: "Ada",
+        quantity: 1,
+      }),
+    { code: "INVALID_STATE" }
+  );
+
+  assert.equal(tier.sold, 0);
+  assert.equal(store.bookingsById.size, 0);
+});
