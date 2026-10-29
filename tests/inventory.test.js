@@ -10,6 +10,9 @@ import {
   cancelBooking,
   findBookingByReference,
   joinWaitlist,
+  publishEvent,
+  unpublishEvent,
+  listEventSummaries,
 } from "../src/domain/inventory.js";
 
 import { DomainError } from "../src/domain/errors.js";
@@ -39,6 +42,8 @@ test("creates an event and ticket tier", () => {
 test("books tickets and calculates the total in cents", () => {
   const { store, event, tier } = setup();
 
+  publishEvent(store, event.id);
+
   const booking = bookTickets(store, {
     eventId: event.id,
     tierId: tier.id,
@@ -48,12 +53,15 @@ test("books tickets and calculates the total in cents", () => {
 
   assert.equal(booking.quantity, 2);
   assert.equal(booking.totalCents, 10000);
-  assert.equal(booking.status, "confirmed");
+  assert.equal(booking.status, "pending");
   assert.equal(tier.sold, 2);
 });
 
 test("rejects a sold-out booking without changing inventory", () => {
   const { store, event, tier } = setup(2);
+
+  publishEvent(store, event.id);
+
 
   bookTickets(store, {
     eventId: event.id,
@@ -103,6 +111,8 @@ test("rejects booking quantities outside 1 to 10", () => {
 test("finds a booking by reference", () => {
   const { store, event, tier } = setup();
 
+  publishEvent(store, event.id);
+
   const booking = bookTickets(store, {
     eventId: event.id,
     tierId: tier.id,
@@ -120,6 +130,8 @@ test("finds a booking by reference", () => {
 test("cancellation releases seats", () => {
   const { store, event, tier } = setup();
 
+  publishEvent(store, event.id);
+
   const booking = bookTickets(store, {
     eventId: event.id,
     tierId: tier.id,
@@ -135,6 +147,8 @@ test("cancellation releases seats", () => {
 
 test("rejects cancelling the same booking twice", () => {
   const { store, event, tier } = setup();
+
+  publishEvent(store, event.id);
 
   const booking = bookTickets(store, {
     eventId: event.id,
@@ -157,6 +171,8 @@ test("rejects cancelling the same booking twice", () => {
 
 test("waitlist preserves first-in, first-out order", () => {
   const { store, event, tier } = setup(1);
+
+  publishEvent(store, event.id);
 
   bookTickets(store, {
     eventId: event.id,
@@ -203,4 +219,142 @@ test("queue handles empty and single-item states", () => {
   assert.equal(queue.dequeue(), "First");
   assert.equal(queue.size, 0);
   assert.equal(queue.peek(), null);
+});
+
+
+test("events are drafts and hidden from the public list by default", () => {
+  const store = createStore();
+  const event = createEvent(store, { name: "Jazz Night" });
+
+  assert.equal(event.status ?? "draft", "draft");
+  assert.deepEqual(listEventSummaries(store), []);
+  assert.equal(listEventSummaries(store, { publishedOnly: false }).length, 1);
+});
+
+
+test("publishing an event requires at least one ticket tier", () => {
+  const store = createStore();
+  const event = createEvent(store, { name: "Jazz Night" });
+
+  assert.throws(
+    () => publishEvent(store, event.id),
+    (error) => error.code === "INVALID_STATE"
+  );
+});
+
+test("published events appear in the public list", () => {
+  const store = createStore();
+  const event = createEvent(store, { name: "Jazz Night" });
+
+  addTier(store, event.id, {
+    name: "General",
+    priceCents: 500000,
+    capacity: 100,
+  });
+
+  publishEvent(store, event.id);
+
+  const summaries = listEventSummaries(store);
+
+  assert.equal(summaries.length, 1);
+  assert.equal(summaries[0].status, "published");
+  assert.equal(summaries[0].tiers[0].seatsLeft, 100);
+});
+
+test("Build 2 events save title, city, venue, date and draft status", () => {
+  const store = createStore();
+
+  const event = createEvent(store, {
+    title: "Jazz Night",
+    city: "Lagos",
+    venue: "City Hall",
+    date: "2026-12-05",
+  });
+
+  assert.equal(event.title, "Jazz Night");
+  assert.equal(event.city, "Lagos");
+  assert.equal(event.venue, "City Hall");
+  assert.equal(event.date, "2026-12-05");
+  assert.equal(event.status, "draft");
+});
+
+
+test("Build 2 event creation rejects missing title or city", () => {
+  const store = createStore();
+
+  assert.throws(
+    () =>
+      createEvent(store, {
+        title: "",
+        city: "Lagos",
+        venue: "City Hall",
+        date: "2026-12-05",
+      }),
+    { code: "VALIDATION" }
+  );
+
+  assert.throws(
+    () =>
+      createEvent(store, {
+        title: "Jazz Night",
+        city: "",
+        venue: "City Hall",
+        date: "2026-12-05",
+      }),
+    { code: "VALIDATION" }
+  );
+
+  assert.equal(store.events.size, 0);
+});
+
+test("Build 2 event creation rejects an invalid date without saving", () => {
+  const store = createStore();
+
+  assert.throws(
+    () =>
+      createEvent(store, {
+        title: "Jazz Night",
+        city: "Lagos",
+        venue: "City Hall",
+        date: "not-a-date",
+      }),
+    { code: "VALIDATION" }
+  );
+
+  assert.equal(store.events.size, 0);
+});
+
+
+test("unpublishing an event returns it to draft and hides it publicly", () => {
+  const store = createStore();
+  const event = createEvent(store, { name: "Jazz Night" });
+
+  addTier(store, event.id, {
+    name: "General",
+    priceCents: 500000,
+    capacity: 100,
+  });
+
+  publishEvent(store, event.id);
+  unpublishEvent(store, event.id);
+
+  assert.equal(event.status, "draft");
+  assert.deepEqual(listEventSummaries(store), []);
+});
+
+test("rejects booking tickets for an unpublished event", () => {
+  const { store, event, tier } = setup();
+
+  assert.throws(
+    () =>
+      bookTickets(store, {
+        eventId: event.id,
+        tierId: tier.id,
+        customerName: "Ada",
+        quantity: 1,
+      }),
+    {
+      code: "INVALID_STATE",
+    }
+  );
 });

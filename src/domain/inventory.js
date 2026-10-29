@@ -43,7 +43,7 @@ function getEvent(store, eventId) {
   const event = store.events.get(eventId);
 
   if (!event) {
-    fail("Event not found.", "EVENT_NOT_FOUND");
+    fail("Event not found.", "NOT_FOUND");
   }
 
   return event;
@@ -83,20 +83,51 @@ export function createStore() {
   };
 }
 
+
 export function createEvent(store, input) {
   requireStore(store);
   requireObject(input, "Event input");
-  requireString(input.name, "Event name");
+
+  const isBuild2Event =
+    "title" in input ||
+    "city" in input ||
+    "venue" in input ||
+    "date" in input;
+
+  const title = isBuild2Event ? input.title : input.name;
+
+  requireString(title, "Event title");
+
+  if (isBuild2Event) {
+    requireString(input.city, "Event city");
+    requireString(input.venue, "Event venue");
+
+    if (
+      typeof input.date !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(input.date) ||
+      Number.isNaN(new Date(input.date).getTime()) ||
+      (input.date.length === 10 &&
+        new Date(input.date).toISOString().slice(0, 10) !== input.date)
+    ) {
+      fail("Event date must be a valid ISO date.");
+    }
+  }
 
   const event = {
     id: newId(),
-    name: input.name.trim(),
+    name: title.trim(),
+    title: title.trim(),
+    city: isBuild2Event ? input.city.trim() : "",
+    venue: isBuild2Event ? input.venue.trim() : "",
+    date: isBuild2Event ? input.date : "",
+    status: "draft",
     tiers: new Map(),
   };
 
   store.events.set(event.id, event);
   return event;
 }
+
 
 export function addTier(store, eventId, input) {
   requireStore(store);
@@ -125,6 +156,7 @@ export function addTier(store, eventId, input) {
   return tier;
 }
 
+
 export function bookTickets(store, input) {
   requireStore(store);
   requireObject(input, "Booking input");
@@ -135,6 +167,10 @@ export function bookTickets(store, input) {
   validateQuantity(quantity);
 
   const { event, tier } = getTier(store, eventId, tierId);
+
+  if (event.status !== "published") {
+    fail("Tickets can only be booked for published events.", "INVALID_STATE");
+  }
 
   const available = tier.capacity - tier.sold;
 
@@ -156,7 +192,7 @@ export function bookTickets(store, input) {
     customerName: customerName.trim(),
     quantity,
     totalCents,
-    status: "confirmed",
+    status: "pending",
   };
 
   if (store.bookingsByReference.has(booking.reference)) {
@@ -238,4 +274,57 @@ export function joinWaitlist(store, input) {
 
   queue.enqueue(entry);
   return entry;
+}
+
+
+export function publishEvent(store, eventId) {
+  requireStore(store);
+
+  const event = getEvent(store, eventId);
+
+  if (event.tiers.size === 0) {
+    fail("An event must have at least one ticket tier before publishing.", "INVALID_STATE");
+  }
+  event.status = "published";
+
+  return event;
+}
+
+export function unpublishEvent(store, eventId) {
+  requireStore(store);
+
+  const event = getEvent(store, eventId);
+  event.status = "draft";
+
+  return event;
+}
+
+export function listEventSummaries(store, { publishedOnly = true } = {}) {
+  requireStore(store);
+
+  const summaries = [];
+
+  for (const event of store.events.values()) {
+    if (publishedOnly && event.status !== "published") {
+      continue;
+    }
+
+    const tiers = Array.from(event.tiers.values());
+
+    summaries.push({
+      id: event.id,
+      name: event.name,
+      status: event.status ?? "draft",
+      tiers: tiers.map((tier) => ({
+        id: tier.id,
+        name: tier.name,
+        priceCents: tier.priceCents,
+        capacity: tier.capacity,
+        sold: tier.sold,
+        seatsLeft: tier.capacity - tier.sold,
+      })),
+    });
+  }
+
+  return summaries;
 }
