@@ -60,3 +60,31 @@
 
 - **What was wrong (or "nothing"):**  
   I initially placed the `publishEvent()` call before creating the ticket tier. This caused an `INVALID_STATE` error because an event must have at least one ticket tier before it can be published. I moved the call to the correct position. The demo then completed successfully, including booking, sold-out handling, cancellation, and waitlist operations.
+
+  
+## Build 4 – Working REST API
+
+### Work completed
+- Implemented an in-memory repository for application data.
+- Added event creation, ticket tier creation, publishing and unpublishing.
+- Connected event search and filtering to the REST API.
+- Implemented ticket booking and booking ownership using the `x-user-id` header.
+- Added a mock payment gateway for successful and declined payments.
+- Implemented unpaid booking cancellation.
+- Added consistent JSON error responses.
+- Created API-level tests using a real HTTP server.
+- Documented API requests in `docs/api-examples.md`.
+
+### Testing
+- Existing Build 3 tests continued to pass.
+- Added four Build 4 API tests.
+- Latest test result: 55 tests passed, 0 failed.
+
+### AI assistance and corrections
+- AI helped structure the repository, services, routes and API tests.
+- Initial repository and service implementations needed corrections to work with the existing inventory domain.
+- Event search mapping was adjusted to include the event details and ticket tiers required by the search module.
+- API tests were added to verify event creation, publishing, searching, booking, payment retry, ownership and cancellation.
+
+### Reflection
+Build 4 helped me understand how the domain logic connects to HTTP endpoints and how a client can interact with an application through a REST API.
