@@ -36,3 +36,27 @@
 
 - **What was wrong (or "nothing"):**  
   Some unrelated practice files were initially staged alongside the Build 2 files. I unstaged those files without deleting them, then committed and pushed the intended Build 2 changes. The commit was successful, and all 33 tests passed. I still need to verify every acceptance criterion in the Build 2 brief and confirm that the required documentation is complete.
+
+## Build 3
+
+### Prompt 1: Architecture, booking state machine and server
+
+- **What I asked:**  
+  I asked the AI to guide me through implementing Build 3 of the Event Ticketing capstone. This included documenting the system architecture, creating a booking state machine, building a small HTTP router and server using Node.js built-in modules, serving static files safely, and adding automated tests.
+
+- **What came back:**  
+  The AI helped implement `src/domain/bookingStateMachine.js`, `src/http/router.js`, `src/http/app.js`, `src/config.js`, and `src/server.js`. It also helped create tests for booking transitions, routing, and HTTP server behaviour, and update `docs/architecture.md`.
+
+- **What was wrong (or "nothing"):**  
+  During testing, the malformed JSON test initially returned a 404 instead of the expected 400. I corrected the request-processing order so that JSON is parsed before checking whether an API route exists. All 51 automated tests then passed. I also tested the health endpoint, static file serving, unknown API routes, and path-traversal protection successfully.
+
+### Prompt 2: Regression testing and demo correction
+
+- **What I asked:**  
+  I asked the AI to guide me through running the existing Build 2 demo and benchmark to ensure the new server work had not broken earlier functionality.
+
+- **What came back:**  
+  The benchmark ran successfully, but the demo initially failed because the event was not published before ticket booking. The AI helped me identify the existing `publishEvent()` function and add it to the demo after creating the ticket tier.
+
+- **What was wrong (or "nothing"):**  
+  I initially placed the `publishEvent()` call before creating the ticket tier. This caused an `INVALID_STATE` error because an event must have at least one ticket tier before it can be published. I moved the call to the correct position. The demo then completed successfully, including booking, sold-out handling, cancellation, and waitlist operations.

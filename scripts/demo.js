@@ -7,6 +7,7 @@ import {
   cancelBooking,
   findBookingByReference,
   joinWaitlist,
+  publishEvent,
 } from "../src/domain/inventory.js";
 
 import { DomainError } from "../src/domain/errors.js";
@@ -20,11 +21,14 @@ const event = createEvent(store, {
   name: "NextGenSound Live In Concert",
 });
 
+
 const tier = addTier(store, event.id, {
   name: "Regular",
   priceCents: 5000,
   capacity: 3,
 });
+
+publishEvent(store, event.id);
 
 console.log(`Event created: ${event.name}`);
 console.log(`Ticket tier: ${tier.name}`);
