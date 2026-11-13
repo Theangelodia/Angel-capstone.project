@@ -6,9 +6,11 @@ import { fileURLToPath } from "node:url";
 import { createRouter } from "./router.js";
 import { DomainError } from "../domain/errors.js";
 import { createMemoryRepository } from "../repositories/memory.js";
-import { createEventService } from "../services/eventService.js";
+import { createDatabase } from "../db/connection.js";
+import { createSQLiteRepository } from "../repositories/sqlite.js";
 import { createBookingService } from "../services/bookingService.js";
 import { createMockPaymentGateway } from "../lib/mockPaymentGateway.js";
+import { createEventService } from "../services/eventService.js";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const publicDirectory = path.resolve(currentDirectory, "../../public");
@@ -141,10 +143,11 @@ async function serveStaticFile(response, pathname) {
   }
 }
 
-export function createApp() {
+export function createApp({ dbPath = "data/event-ticketing.sqlite" } = {}) {
   const router = createRouter();
 
-  const repository = createMemoryRepository();
+  const database = createDatabase(dbPath);
+  const repository = createSQLiteRepository(database);
   const paymentGateway = createMockPaymentGateway();
 
   const events = createEventService(repository);
@@ -271,7 +274,7 @@ export function createApp() {
     },
   );
 
-  return createServer(async (request, response) => {
+    const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url, "http://localhost");
       const pathname = url.pathname;
@@ -354,4 +357,10 @@ export function createApp() {
       });
     }
   });
+
+  server.once("close", () => {
+    database.close();
+  });
+
+  return server;
 }

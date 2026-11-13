@@ -1,8 +1,3 @@
-import {
-  bookTickets,
-  cancelBooking,
-  findBookingByReference,
-} from "../domain/inventory.js";
 
 import { assertTransition } from "../domain/bookingStateMachine.js";
 import { DomainError } from "../domain/errors.js";
@@ -14,17 +9,11 @@ export function createBookingService(repository, paymentGateway) {
         throw new DomainError("User ID is required.", "UNAUTHORIZED");
       }
 
-      const store = await repository.getStore();
-
-      const booking = bookTickets(store, input);
-      booking.userId = userId;
-
-      return booking;
+      return repository.createBooking(input, userId);
     },
 
     async pay(reference, userId, options = {}) {
-      const store = await repository.getStore();
-      const booking = findBookingByReference(store, reference);
+      const booking = await repository.findBookingByReference(reference);
 
       if (!booking) {
         throw new DomainError("Booking not found.", "BOOKING_NOT_FOUND");
@@ -42,21 +31,17 @@ export function createBookingService(repository, paymentGateway) {
       const result = await paymentGateway.charge(options);
 
       if (!result.success) {
-        throw new DomainError(
-          result.message,
-          "PAYMENT_DECLINED",
-        );
+        throw new DomainError(result.message, "PAYMENT_DECLINED");
       }
 
-      booking.status = "paid";
-      booking.transactionReference = result.transactionReference;
-
-      return booking;
+      return repository.markBookingAsPaid(
+        reference,
+        result.transactionReference,
+      );
     },
 
     async cancel(reference, userId) {
-      const store = await repository.getStore();
-      const booking = findBookingByReference(store, reference);
+      const booking = await repository.findBookingByReference(reference);
 
       if (!booking) {
         throw new DomainError("Booking not found.", "BOOKING_NOT_FOUND");
@@ -71,7 +56,7 @@ export function createBookingService(repository, paymentGateway) {
 
       assertTransition(booking.status, "cancelled");
 
-      return cancelBooking(store, reference);
+      return repository.cancelBooking(reference);
     },
   };
 }
