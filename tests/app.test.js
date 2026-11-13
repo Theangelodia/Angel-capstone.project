@@ -7,7 +7,7 @@ import path from "node:path";
 import { createApp } from "../src/http/app.js";
 
 test("GET /health returns HTTP 200 and JSON status ok", async (t) => {
-  const server = createApp();
+  const server = createApp({ dbPath: ":memory:" });
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 
@@ -21,7 +21,7 @@ test("GET /health returns HTTP 200 and JSON status ok", async (t) => {
 });
 
 test("unknown API routes return a JSON 404", async (t) => {
-  const server = createApp();
+  const server = createApp({ dbPath: ":memory:" });
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
@@ -37,7 +37,7 @@ test("unknown API routes return a JSON 404", async (t) => {
 });
 
 test("malformed JSON sent to an unknown API route returns JSON 400", async (t) => {
-  const server = createApp();
+  const server = createApp({ dbPath: ":memory:" });
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));

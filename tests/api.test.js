@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { createApp } from "../src/http/app.js";
 
 async function startServer(t) {
-  const server = createApp();
+  const server = createApp({ dbPath: ":memory:" });
 
   await new Promise((resolve, reject) => {
     server.once("error", reject);
