@@ -88,3 +88,43 @@
 
 ### Reflection
 Build 4 helped me understand how the domain logic connects to HTTP endpoints and how a client can interact with an application through a REST API.
+
+
+## Build 6 – Frontend on Mock Data
+
+### Prompt 1: Frontend structure and event browsing
+
+- **What I asked:**  
+  I asked the AI to guide me through building the frontend for the Event Ticketing capstone using HTML, CSS and browser JavaScript modules. The requirements included event browsing, searching, filtering, sorting and displaying event details using mock data.
+
+- **What came back:**  
+  The AI helped create the homepage, shared DOM helper, mock event data, API adapter, homepage JavaScript and CSS styling.
+
+- **What was wrong (or "nothing"):**  
+  The homepage initially did not display event cards because `public/js/pages/home.js` was missing from the expected directory. The browser returned a 404 error. I created the file in the correct directory, added the required code and refreshed the page. The event cards and View event links then appeared successfully.
+
+### Prompt 2: Event details, ticket selection and checkout
+
+- **What I asked:**  
+  I asked the AI to guide me through creating an event details page with ticket selection, quantity validation, a checkout form, a countdown and mock card payment.
+
+- **What came back:**  
+  The AI helped implement `public/event.html`, `public/js/pages/event.js` and additional CSS styles. The functionality included booking creation, payment processing, declined payment handling and payment retry.
+
+- **What was wrong (or "nothing"):**  
+  The event details page initially remained on "Loading event details..." because `public/js/pages/event.js` was missing from the expected directory. I checked the browser console and Network tab, confirmed that the file was not being requested, and checked its location using PowerShell. I created the missing file in the correct directory and added the event page code. The page then loaded successfully.
+
+### Testing and verification
+
+- The homepage displayed the mock events and View event links.
+- Event details and ticket tiers loaded successfully.
+- Ticket quantity validation worked.
+- Sold-out ticket tiers displayed a Sold out label and had disabled selection controls.
+- Booking creation worked.
+- The checkout countdown displayed.
+- Declined mock payments displayed an error and allowed retry.
+- Successful mock payments returned a booking reference.
+
+### Reflection
+
+Build 6 helped me understand how browser JavaScript modules, DOM manipulation, HTML forms and CSS work together to create a frontend. I also learned how to use the browser Developer Tools, especially the Console and Network tabs, to identify missing files and troubleshoot 404 errors.
